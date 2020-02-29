@@ -11,6 +11,7 @@ import tempfile
 import numpy as np
 from imageio import imwrite
 from pytesseract import pytesseract
+from tesserocr import PyTessBaseAPI, PSM, OEM, RIL, iterate_level
 
 
 def ocr(img, mrz_mode=True, extra_cmdline_params=''):
@@ -64,6 +65,59 @@ def ocr(img, mrz_mode=True, extra_cmdline_params=''):
     finally:
         pytesseract.cleanup(input_file_name)
         pytesseract.cleanup(output_file_name)
+
+
+def ocr_mrz(img):
+    """Runs Tesseract on a given image. Writes an intermediate tempfile and then runs the tesseract command on the image.
+    """
+    if img is None or img.shape[-1] == 0:  # Issue #34
+        return '', []
+    input_file_name = '%s.bmp' % _tempnam()
+    try:
+        # Prevent annoying warning about lossy conversion to uint8
+        if str(img.dtype).startswith('float') and np.nanmin(img) >= 0 and np.nanmax(img) <= 1:
+            img = img.astype(np.float64) * (np.power(2.0, 8) - 1) + 0.499999999
+            img = img.astype(np.uint8)
+        imwrite(input_file_name, img)
+
+###########################################################
+
+        with PyTessBaseAPI(psm=PSM.SINGLE_BLOCK, oem=OEM.LSTM_ONLY) as api:
+            api.SetImageFile(input_file_name)
+            # api.SetVariable("save_blob_choices", "T")
+            api.SetVariable("load_system_dawg", "0");
+            api.SetVariable("load_freq_dawg", "0");
+            api.SetVariable("tessedit_char_whitelist", "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789><");
+            # api.SetRectangle(37, 228, 548, 31)
+            api.Recognize()
+
+            ri = api.GetIterator()
+            level = RIL.SYMBOL
+            result_string = ""
+            result_conf = []
+            for r in iterate_level(ri, level):
+                symbol = None
+                try:
+                    symbol = r.GetUTF8Text(level)  # r == ri
+                except:
+                    pass
+                if symbol:
+                    result_string += symbol
+                    if (r.IsAtFinalElement(RIL.TEXTLINE, RIL.SYMBOL)):
+                        result_string += "\n"
+                        result_conf.append(100.00)
+                    conf = r.Confidence(level)
+                    result_conf.append(conf)
+
+            return ({"text":result_string, "confidence":result_conf})
+
+#######################################################
+
+    finally:
+        pytesseract.cleanup(input_file_name)
+
+
+
 
 
 def _tempnam():

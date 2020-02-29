@@ -12,7 +12,7 @@ from skimage import io as skimage_io # So as not to clash with builtin io
 from ..util.pdf import extract_first_jpeg_in_pdf
 from ..util.pipeline import Pipeline
 from ..util.geometry import RotatedBox
-from ..util.ocr import ocr
+from ..util.ocr import ocr, ocr_mrz
 from .text import MRZ
 
 
@@ -224,12 +224,18 @@ class BoxToMRZ(object):
             box.angle = 0.0
 
         roi = box.extract_from_image(img, scale)
-        text = ocr(roi, extra_cmdline_params=self.extra_cmdline_params)
+        # text = ocr(roi, extra_cmdline_params=self.extra_cmdline_params)
+        text = ocr_mrz(roi)["text"]
 
+        # ocr_mrz (roi)
+        # print("---------------")
+        # print (text)
+        # print ("---------------")
         if '>>' in text or ('>' in text and '<' not in text):
             # Most probably we need to reverse the ROI
             roi = roi[::-1, ::-1]
-            text = ocr(roi, extra_cmdline_params=self.extra_cmdline_params)
+            # text = ocr(roi, extra_cmdline_params=self.extra_cmdline_params)
+            text = ocr_mrz(roi)['text']
 
         if not '<' in text:
             # Assume this is unrecoverable and stop here (TODO: this may be premature, although it saves time on useless stuff)
@@ -258,8 +264,10 @@ class BoxToMRZ(object):
             scale_by = int(1050.0 / roi.shape[1] + 0.5)
             roi_lg = transform.rescale(roi, scale_by, order=filter_order, mode='constant', multichannel=False,
                                        anti_aliasing=True)
-            new_text = ocr(roi_lg, extra_cmdline_params=self.extra_cmdline_params)
+            # new_text = ocr(roi_lg, extra_cmdline_params=self.extra_cmdline_params)
+            new_text = ocr_mrz(roi_lg)['text']
             new_mrz = MRZ.from_ocr(new_text)
+
             new_mrz.aux['method'] = 'rescaled(%d)' % filter_order
             if new_mrz.valid_score > cur_mrz.valid_score:
                 cur_mrz = new_mrz
@@ -269,7 +277,9 @@ class BoxToMRZ(object):
     def _try_black_tophat(self, roi, cur_text, cur_mrz):
         roi_b = morphology.black_tophat(roi, morphology.disk(5))
         # There are some examples where this line basically hangs for an undetermined amount of time.
-        new_text = ocr(roi_b, extra_cmdline_params=self.extra_cmdline_params)
+        # new_text = ocr(roi_b, extra_cmdline_params=self.extra_cmdline_params)
+        new_text = ocr_mrz(roi_b)['text']
+
         new_mrz = MRZ.from_ocr(new_text)
         if new_mrz.valid_score > cur_mrz.valid_score:
             new_mrz.aux['method'] = 'black_tophat'

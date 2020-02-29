@@ -9,7 +9,7 @@ License: MIT
 from pkg_resources import resource_filename
 import numpy as np
 from skimage.io import imread
-from passporteye.util.ocr import ocr
+from passporteye.util.ocr import ocr, ocr_mrz
 
 
 # Smoke test for Tesseract OCR
@@ -30,6 +30,9 @@ def test_ocr():
     #assert s.startswith('T116 10111610 1111011111 110111') or s.startswith('T116 111111610 1111011111 110111')
 
 def test_issue34():
-	ocr(np.asarray([]))
-	ocr(np.asarray([[]]))
-	ocr(np.asarray([[0]], dtype=np.uint8))
+	# ocr(np.asarray([]))
+	# ocr(np.asarray([[]]))
+	# ocr(np.asarray([[0]], dtype=np.uint8))
+    ocr_mrz(np.asarray([]))
+    ocr_mrz(np.asarray([[]]))
+    ocr_mrz(np.asarray([[0]], dtype=np.uint8))
