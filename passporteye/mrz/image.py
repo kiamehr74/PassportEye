@@ -14,7 +14,7 @@ from ..util.pipeline import Pipeline
 from ..util.geometry import RotatedBox
 from ..util.ocr import ocr, ocr_mrz
 from .text import MRZ
-
+import matplotlib.pyplot as plt
 
 class Loader(object):
     """Loads `file` to `img`."""
@@ -90,6 +90,7 @@ class BooneTransform(object):
         img_sob = abs(filters.sobel_v(img_th))
         img_closed = morphology.closing(img_sob, m)
         threshold = filters.threshold_otsu(img_closed)
+
         return img_closed > threshold
 
 
@@ -99,7 +100,7 @@ class MRZBoxLocator(object):
     __depends__ = ['img_binary']
     __provides__ = ['boxes']
 
-    def __init__(self, max_boxes=4, min_points_in_contour=50, min_area=500, min_box_aspect=5, angle_tol=0.1,
+    def __init__(self, max_boxes=3, min_points_in_contour=50, min_area=500, min_box_aspect=7, angle_tol=0.1,
                  lineskip_tol=1.5, box_type='bb'):
         self.max_boxes = max_boxes
         self.min_points_in_contour = min_points_in_contour
@@ -126,12 +127,15 @@ class MRZBoxLocator(object):
             if rb.height == 0 or rb.width / rb.height < self.min_box_aspect:
                 continue
 
+
             # All tests fine, add to the list
             results.append(rb)
 
         # Next sort and leave only max_boxes largest boxes by area
         results.sort(key=lambda x: -x.area)
         return self._merge_boxes(results[0:self.max_boxes])
+
+
 
     def _are_aligned_angles(self, b1, b2):
         "Are two boxes aligned according to their angle?"
@@ -190,6 +194,8 @@ class FindFirstValidMRZ(object):
                 return i, roi, text, mrz
             elif mrz.valid_score > 0:
                 mrzs.append((i, roi, text, mrz))
+
+
         if not mrzs:
             return None, None, None, None
         else:
@@ -224,17 +230,21 @@ class BoxToMRZ(object):
             box.angle = 0.0
 
         roi = box.extract_from_image(img, scale)
+
+
         # text = ocr(roi, extra_cmdline_params=self.extra_cmdline_params)
         text = ocr_mrz(roi)["text"]
 
-        # ocr_mrz (roi)
-        # print("---------------")
-        # print (text)
-        # print ("---------------")
         if '>>' in text or ('>' in text and '<' not in text):
             # Most probably we need to reverse the ROI
             roi = roi[::-1, ::-1]
             # text = ocr(roi, extra_cmdline_params=self.extra_cmdline_params)
+            text = ocr_mrz(roi)['text']
+
+        # Try with pi+angle
+        if ">>>" in text and not '<<<' in text:
+            box.angle += np.pi
+            roi = box.extract_from_image(img, scale)
             text = ocr_mrz(roi)['text']
 
         if not '<' in text:
@@ -254,6 +264,8 @@ class BoxToMRZ(object):
 
         if not mrz.valid:
             text, mrz = self._try_black_tophat(roi, text, mrz)
+
+
 
         return roi, text, mrz
 

@@ -9,7 +9,7 @@ from sklearn.decomposition import PCA
 from matplotlib import pyplot as plt
 from matplotlib import patches
 from skimage import transform
-
+import cv2
 
 class RotatedBox(object):
     """
@@ -136,18 +136,30 @@ class RotatedBox(object):
 
         TODO: This could be made more efficient if we avoid rotating the full image and cut out the ROI from it beforehand.
         """
-        rotate_by = (np.pi/2 - self.angle)*180/np.pi
-        img_rotated = transform.rotate(img, angle=rotate_by, center=[self.center[1]*scale, self.center[0]*scale], resize=True)
-        # The resizeable transform will shift the resulting image somewhat wrt original coordinates.
-        # When we cut out the box we will compensate for this shift.
-        shift_c, shift_r = self._compensate_rotation_shift(img, scale)
+        # rotate_by = (np.pi/2 - self.angle)*180/np.pi
+        # img_rotated = transform.rotate(img, angle=rotate_by, center=[self.center[1]*scale, self.center[0]*scale], resize=True)
+        # # The resizeable transform will shift the resulting image somewhat wrt original coordinates.
+        # # When we cut out the box we will compensate for this shift.
+        # shift_c, shift_r = self._compensate_rotation_shift(img, scale)
+        #
+        # r1 = max(int((self.center[0] - self.height/2 - margin_height)*scale - shift_r), 0)
+        # r2 = int((self.center[0] + self.height/2 + margin_height)*scale - shift_r)
+        # c1 = max(int((self.center[1] - self.width/2 - margin_width)*scale - shift_c), 0)
+        # c2 = int((self.center[1] + self.width/2 + margin_width)*scale - shift_c)
+        # return img_rotated[r1:r2, c1:c2]
 
-        r1 = max(int((self.center[0] - self.height/2 - margin_height)*scale - shift_r), 0)
-        r2 = int((self.center[0] + self.height/2 + margin_height)*scale - shift_r)
-        c1 = max(int((self.center[1] - self.width/2 - margin_width)*scale - shift_c), 0)
-        c2 = int((self.center[1] + self.width/2 + margin_width)*scale - shift_c)
-        return img_rotated[r1:r2, c1:c2]
-
+        # four corner points for padded shoe
+        rect = scale * self.as_poly(margin_width, margin_height)
+        width = int(np.linalg.norm(rect[0]-rect[1]))
+        height = int(np.linalg.norm(rect[1]-rect[2]))
+        src_pts = np.array(rect, dtype="float32")[::,::-1]
+        dst_pts = np.array([[width - 1, 0],
+                            [0, 0],
+                            [0, height - 1],
+                            [width - 1, height - 1]], dtype="float32")
+        M = cv2.getPerspectiveTransform(src_pts, dst_pts)
+        warped = cv2.warpPerspective(img, M, (width, height))
+        return warped
     def _compensate_rotation_shift(self, img, scale):
         """This is an auxiliary method used by extract_from_image.
         It is needed due to particular specifics of the skimage.transform.rotate implementation.
