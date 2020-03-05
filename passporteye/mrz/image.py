@@ -235,16 +235,15 @@ class BoxToMRZ(object):
         # text = ocr(roi, extra_cmdline_params=self.extra_cmdline_params)
         text = ocr_mrz(roi)["text"]
 
-        if '>>' in text or ('>' in text and '<' not in text):
+        # if '>>' in text or ('>' in text and '<' not in text):
+        #     # Most probably we need to reverse the ROI
+        #     roi = roi[::-1, ::-1]
+        #     # text = ocr(roi, extra_cmdline_params=self.extra_cmdline_params)
+        #     text = ocr_mrz(roi)['text']
+
+        if not '<<<' in text:
             # Most probably we need to reverse the ROI
             roi = roi[::-1, ::-1]
-            # text = ocr(roi, extra_cmdline_params=self.extra_cmdline_params)
-            text = ocr_mrz(roi)['text']
-
-        # Try with pi+angle
-        if ">>>" in text and not '<<<' in text:
-            box.angle += np.pi
-            roi = box.extract_from_image(img, scale)
             text = ocr_mrz(roi)['text']
 
         if not '<' in text:
@@ -253,6 +252,7 @@ class BoxToMRZ(object):
 
         mrz = MRZ.from_ocr(text)
         mrz.aux['method'] = 'direct'
+
 
         # Now try improving the result via hacks
         if not mrz.valid:
