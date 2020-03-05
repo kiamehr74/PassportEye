@@ -27,8 +27,10 @@ The simplest way to install the package is via ``pip``::
 Note that `PassportEye` depends on `numpy`, `scipy`, `matplotlib` and `scikit-image`, among other things. The installation of those requirements, although automatic,
 may take time or fail sometimes for various reasons (e.g. lack of necessary libraries). If this happens, consider installing the dependencies explicitly from the binary packages, such as those provided by the OS distribution or the "wheel" packages. Another convenient option is to use a Python distribution with pre-packaged `numpy`/`scipy`/`matplotlib` binaries (Anaconda Python being a great choice at the moment).
 
-In addition, you must have the `Tesseract OCR <https://github.com/tesseract-ocr>`_ installed and added to the system path: the ``tesseract`` tool must be 
+In addition, you must have the `Tesseract OCR and libtesseract-dev <https://github.com/tesseract-ocr>`_ installed and added to the system path: the ``tesseract`` tool must be
 accessible at the command line.
+
+also replace `this trained data <https://github.com/Shreeshrii/tessdata_ocrbr>`_ with tesseracr eng.traineddata for better result.
 
 Usage
 -----
