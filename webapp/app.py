@@ -46,8 +46,27 @@ def process():
 
     data = mrz.to_dict()
     os.remove(file_name)
-    return make_response(jsonify(data), 200)
+    result = {}
+
+    result["country"] = data["country"]
+    result["date_of_birth"] = data["date_of_birth"]
+    result["expiration_date"] = data["expiration_date"]
+    result["mrz_type"] = data["mrz_type"]
+    result["names"] = data["names"]
+    result["nationality"] = data["nationality"]
+    result["number"] = data["number"]
+    result["personal_number"] = data["personal_number"]
+    result["sex"] = data["sex"]
+    result["surname"] = data["surname"]
+    result["type"] = data["type"]
+    result["valid_composite"] = data["valid_composite"]
+    result["valid_date_of_birth"] = data["valid_date_of_birth"]
+    result["valid_expiration_date"] = data["valid_expiration_date"]
+    result["valid_number"] = data["valid_number"]
+    result["valid_personal_number"] = data["valid_personal_number"]
+    result["valid_score"] = data["valid_score"]
+    return make_response(jsonify(result), 200)
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", debug=True)
+    app.run(host="0.0.0.0")
