@@ -30,7 +30,7 @@ setup(name='PassportEye',
       packages=find_packages(exclude=['examples', 'tests']),
       include_package_data=True,
       zip_safe=False,
-      install_requires=['opencv-python >= 4.2.0.32', 'numpy', 'scipy', 'scikit-image >= 0.14.1', 'imageio', 'scikit-learn', 'matplotlib', 'pytesseract >= 0.2.0', 'imageio',
+      install_requires=['Flask', 'opencv-python >= 4.2.0.32', 'numpy', 'scipy', 'scikit-image >= 0.14.1', 'imageio', 'scikit-learn', 'matplotlib', 'pytesseract >= 0.2.0', 'imageio',
                         'pdfminer' if sys.version_info.major == 2 else 'pdfminer3k'],
       extras_require={
           "test": ["pytest"],
