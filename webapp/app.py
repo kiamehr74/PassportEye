@@ -42,7 +42,7 @@ def process():
     mrz = read_mrz(file_name)
     if mrz is None:
         os.remove(file_name)
-        return make_response("Can not read image", 200)
+        return make_response("Can not read image", 404)
 
     data = mrz.to_dict()
     os.remove(file_name)
